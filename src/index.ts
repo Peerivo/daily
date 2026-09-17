@@ -5,6 +5,8 @@ export * from "./activity/connectors/google-drive.js";
 export * from "./activity/connectors/mock.js";
 export * from "./activity/connectors/rules.js";
 export * from "./activity/digest.js";
+export * from "./activity/journal.js";
+export * from "./activity/project-registry.js";
 export * from "./activity/repository.js";
 export * from "./activity/runner.js";
 export * from "./activity/types.js";
