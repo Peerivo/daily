@@ -189,6 +189,36 @@ describe("daily journal", () => {
     assert.match(markdown, /GitHub ingestion failed/);
   });
 
+  it("counts project movement from the report window but stale state from history", () => {
+    const older = storedActivity({
+      id: "older",
+      externalId: "older",
+      title: "[Peerivo/daily] Older Daily change",
+      occurredAt: new Date("2026-09-10T08:00:00.000Z"),
+      metadata: { repository: "Peerivo/daily" },
+    });
+    const recent = storedActivity({
+      id: "recent",
+      externalId: "recent",
+      title: "[Peerivo/daily] Recent Daily change",
+      occurredAt: new Date("2026-09-17T08:00:00.000Z"),
+      metadata: { repository: "Peerivo/daily" },
+    });
+
+    const markdown = renderDailyJournal({
+      date: journalDate,
+      generatedAt,
+      items: [older, recent],
+      movementItems: [recent],
+      projects: DAILY_PROJECT_REGISTRY.filter(
+        (project) => project.id === "daily",
+      ),
+    });
+
+    assert.match(markdown, /Daily Activity Layer: 1 событий за окно отчёта/);
+    assert.doesNotMatch(markdown, /Daily Activity Layer: 2 событий за окно отчёта/);
+  });
+
   it("renders a daily journal from activity items", () => {
     const markdown = renderDailyJournal({
       date: journalDate,

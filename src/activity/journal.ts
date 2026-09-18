@@ -15,6 +15,7 @@ export interface DailyJournalInput {
   date: Date;
   generatedAt?: Date;
   items?: readonly StoredActivityItem[];
+  movementItems?: readonly StoredActivityItem[];
   digest?: DailyActivityDigest;
   projects?: readonly DailyProjectDefinition[];
   completed?: readonly string[];
@@ -64,14 +65,14 @@ function renderActivityList(
 }
 
 function renderProjectProgress(projects: readonly ProjectActivitySummary[]): string {
-  const activeProjects = projects.filter((summary) => !summary.isStale);
+  const activeProjects = projects.filter((summary) => summary.activityCount > 0);
 
   return activeProjects.length === 0
     ? "- Нет свежих движений по проектам"
     : activeProjects
         .map((summary) => {
           const days = summary.daysSinceActivity ?? 0;
-          return `- ${summary.project.title}: ${summary.activityCount} активн., последнее движение ${days} дн. назад`;
+          return `- ${summary.project.title}: ${summary.activityCount} событий за окно отчёта, последнее движение ${days} дн. назад`;
         })
         .join("\n");
 }
@@ -102,7 +103,11 @@ export function buildDailyJournalModel(input: DailyJournalInput): DailyJournalMo
   const generatedAt = input.generatedAt ?? new Date();
   const digest = input.digest ?? buildDailyActivityDigest(items, generatedAt);
   const projects = input.projects ?? DAILY_PROJECT_REGISTRY;
-  const projectSummaries = summarizeProjectActivity(items, projects, input.date);
+  const projectSummaries = summarizeProjectActivity(
+    input.movementItems ?? items,
+    projects,
+    input.date,
+  );
 
   return {
     date: input.date,

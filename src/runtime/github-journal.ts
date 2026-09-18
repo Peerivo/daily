@@ -126,6 +126,7 @@ async function main(): Promise<void> {
       date: now,
       generatedAt: now,
       items: result.activities,
+      movementItems: recent,
       digest,
       knowledgeContext,
       notes: [
