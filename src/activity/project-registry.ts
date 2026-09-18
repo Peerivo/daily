@@ -353,10 +353,16 @@ export function summarizeProjectActivity(
   projects: readonly DailyProjectDefinition[] = DAILY_PROJECT_REGISTRY,
   now = new Date(),
 ): ProjectActivitySummary[] {
+  const movementActivities = activities.filter(
+    (item) => item.metadata.ingestionError !== true,
+  );
+
   return projects
     .map((project): ProjectActivitySummary => {
-      const projectActivities = activities.filter((item) =>
-        activityMatchesProject(project, item),
+      const projectActivities = movementActivities.filter((item) =>
+        findDailyProjectsForActivity(item, projects).some(
+          (matchedProject) => matchedProject.id === project.id,
+        ),
       );
       const latestActivityAt = projectActivities.reduce<Date | null>(
         (latest, item) =>

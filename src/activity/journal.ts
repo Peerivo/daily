@@ -130,6 +130,16 @@ ${renderBulletList(model.completed, "Заполнить вручную")}
 ## Срочно
 ${renderActivityList(model.digest.urgent, "Нет срочного")}
 
+## Требует внимания
+${renderActivityList(
+  model.digest.todayActions.filter(
+    (item) =>
+      item.priority !== "urgent" &&
+      !(item.source === "gmail" && item.status === "needs_action"),
+  ),
+  "Нет дополнительных действий",
+)}
+
 ## Нужно ответить
 ${renderActivityList(model.digest.needsReply, "Нет обязательных ответов")}
 

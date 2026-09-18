@@ -126,6 +126,7 @@ export class GitHubRestActivityClient implements GitHubActivityClient {
               occurredAt: params.until,
               state: message,
               conclusion: "failure",
+              ingestionError: true,
             },
           ];
         }
