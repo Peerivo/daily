@@ -60,7 +60,9 @@ function defaultFetch(
   url: string,
   init?: { headers?: Record<string, string> },
 ): Promise<GitHubHttpResponse> {
-  return fetch(url, { headers: init?.headers });
+  return init?.headers === undefined
+    ? fetch(url)
+    : fetch(url, { headers: init.headers });
 }
 
 function parseRepository(repository: string): [string, string] {
