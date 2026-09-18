@@ -324,7 +324,7 @@ function activityText(item: StoredActivityItem): string {
     .toLocaleLowerCase();
 }
 
-function activityMatchesProject(
+export function activityMatchesProject(
   project: DailyProjectDefinition,
   item: StoredActivityItem,
 ): boolean {
@@ -400,4 +400,12 @@ export function getDailyProjectById(
   projects: readonly DailyProjectDefinition[] = DAILY_PROJECT_REGISTRY,
 ): DailyProjectDefinition | null {
   return projects.find((project) => project.id === projectId) ?? null;
+}
+
+
+export function findDailyProjectsForActivity(
+  item: StoredActivityItem,
+  projects: readonly DailyProjectDefinition[] = DAILY_PROJECT_REGISTRY,
+): DailyProjectDefinition[] {
+  return projects.filter((project) => activityMatchesProject(project, item));
 }
