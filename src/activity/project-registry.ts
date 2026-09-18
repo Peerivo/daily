@@ -428,6 +428,22 @@ export function findDailyProjectsForActivity(
   item: StoredActivityItem,
   projects: readonly DailyProjectDefinition[] = DAILY_PROJECT_REGISTRY,
 ): DailyProjectDefinition[] {
+  const repository =
+    typeof item.metadata.repository === "string"
+      ? item.metadata.repository.toLocaleLowerCase()
+      : null;
+
+  if (repository !== null) {
+    const repositoryProject = projects.find(
+      (project) =>
+        project.repo !== null &&
+        project.repo.toLocaleLowerCase() === repository,
+    );
+    if (repositoryProject !== undefined) {
+      return [repositoryProject];
+    }
+  }
+
   const precise = projects.filter((project) =>
     activityMatchesProjectPrecisely(project, item),
   );

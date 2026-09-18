@@ -129,6 +129,35 @@ describe("daily journal", () => {
     );
   });
 
+  it("treats a known GitHub repository as authoritative over generic keywords", () => {
+    const summaries = summarizeProjectActivity(
+      [
+        storedActivity({
+          title: "[Peerivo/daily] PR #7: Improve project report",
+          metadata: { repository: "Peerivo/daily" },
+        }),
+      ],
+      DAILY_PROJECT_REGISTRY,
+      journalDate,
+    );
+
+    assert.equal(
+      summaries.find((summary) => summary.project.id === "daily")
+        ?.activityCount,
+      1,
+    );
+    assert.equal(
+      summaries.find((summary) => summary.project.id === "ai-factory")
+        ?.activityCount,
+      0,
+    );
+    assert.equal(
+      summaries.find((summary) => summary.project.id === "people-os")
+        ?.activityCount,
+      0,
+    );
+  });
+
   it("surfaces ingestion failures without counting them as project movement", () => {
     const ingestionFailure = storedActivity({
       title: "[Peerivo/publisher] GitHub ingestion failed",
