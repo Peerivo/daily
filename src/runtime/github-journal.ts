@@ -3,10 +3,13 @@ import {
   FileSystemDailyJournalStore,
   GitHubActivityConnector,
   GitHubRestActivityClient,
+  HttpKnowledgePort,
   InMemoryActivityItemRepository,
+  activityToKnowledgeCandidate,
   buildDailyActivityDigest,
   persistDailyJournal,
   runDailyActivityCheck,
+  summarizeProjectActivity,
 } from "../index.js";
 
 function repositoriesFromEnvironment(): string[] {
@@ -36,6 +39,42 @@ function positiveInteger(name: string, fallback: number): number {
     throw new TypeError(`${name} must be a positive integer`);
   }
   return parsed;
+}
+
+async function loadKnowledgeContext(
+  activities: Parameters<typeof activityToKnowledgeCandidate>[0][],
+  now: Date,
+): Promise<string[]> {
+  const baseUrl = process.env.KNOWLEDGE_BASE_URL?.trim();
+  if (!baseUrl) return [];
+
+  const token = process.env.KNOWLEDGE_TOKEN;
+  const knowledge = new HttpKnowledgePort(
+    token === undefined ? { baseUrl } : { baseUrl, token },
+  );
+
+  await knowledge.submitCandidates(
+    activities.map((activity) => activityToKnowledgeCandidate(activity)),
+  );
+
+  const activeProjects = summarizeProjectActivity(
+    activities,
+    DAILY_PROJECT_REGISTRY,
+    now,
+  )
+    .filter((summary) => summary.activityCount > 0 && !summary.isStale)
+    .slice(0, 5);
+
+  const contexts = await Promise.all(
+    activeProjects.map(async (summary) => ({
+      title: summary.project.title,
+      context: await knowledge.getProjectContext(summary.project.id),
+    })),
+  );
+
+  return contexts.flatMap(({ title, context }) =>
+    context === null ? [] : [`${title}: ${context.summary}`],
+  );
 }
 
 async function main(): Promise<void> {
@@ -78,6 +117,7 @@ async function main(): Promise<void> {
     (activity) => activity.occurredAt >= digestSince,
   );
   const digest = buildDailyActivityDigest(recent, now);
+  const knowledgeContext = await loadKnowledgeContext(result.activities, now);
 
   const journal = await persistDailyJournal(
     {
@@ -85,10 +125,12 @@ async function main(): Promise<void> {
       generatedAt: now,
       items: result.activities,
       digest,
+      knowledgeContext,
       notes: [
         `GitHub repositories scanned: ${repositories.length}`,
         `GitHub activities in history window: ${result.activities.length}`,
         `GitHub activities in digest window: ${recent.length}`,
+        `Knowledge contexts loaded: ${knowledgeContext.length}`,
       ],
     },
     new FileSystemDailyJournalStore(
