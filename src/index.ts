@@ -10,3 +10,6 @@ export * from "./activity/project-registry.js";
 export * from "./activity/repository.js";
 export * from "./activity/runner.js";
 export * from "./activity/types.js";
+export * from "./activity/connectors/github.js";
+export * from "./activity/journal-store.js";
+export * from "./knowledge/port.js";
