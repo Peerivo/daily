@@ -99,10 +99,37 @@ export class GitHubRestActivityClient implements GitHubActivityClient {
       throw new RangeError("since must be earlier than or equal to until");
     }
 
+    for (const repository of this.options.repositories) {
+      parseRepository(repository);
+    }
+
     const batches = await Promise.all(
-      this.options.repositories.map((repository) =>
-        this.fetchRepository(repository, params.since, params.until),
-      ),
+      this.options.repositories.map(async (repository) => {
+        try {
+          return await this.fetchRepository(
+            repository,
+            params.since,
+            params.until,
+          );
+        } catch (error: unknown) {
+          const message =
+            error instanceof Error ? error.message : String(error);
+          return [
+            {
+              id: `repository-error:${repository}:${params.until
+                .toISOString()
+                .slice(0, 10)}`,
+              repository,
+              kind: "check_run" as const,
+              title: "GitHub ingestion failed",
+              url: `https://github.com/${repository}`,
+              occurredAt: params.until,
+              state: message,
+              conclusion: "failure",
+            },
+          ];
+        }
+      }),
     );
 
     return batches
