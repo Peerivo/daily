@@ -403,9 +403,33 @@ export function getDailyProjectById(
 }
 
 
+function activityMatchesProjectPrecisely(
+  project: DailyProjectDefinition,
+  item: StoredActivityItem,
+): boolean {
+  const text = activityText(item);
+  const exactTerms = [
+    project.id,
+    project.title,
+    ...(project.repo === null ? [] : [project.repo]),
+    ...project.keywords,
+  ];
+
+  return exactTerms.some((term) => text.includes(term.toLocaleLowerCase()));
+}
+
 export function findDailyProjectsForActivity(
   item: StoredActivityItem,
   projects: readonly DailyProjectDefinition[] = DAILY_PROJECT_REGISTRY,
 ): DailyProjectDefinition[] {
-  return projects.filter((project) => activityMatchesProject(project, item));
+  const precise = projects.filter((project) =>
+    activityMatchesProjectPrecisely(project, item),
+  );
+  if (precise.length > 0) return precise;
+
+  return projects.filter(
+    (project) =>
+      project.activityProjectId !== null &&
+      item.projectId === project.activityProjectId,
+  );
 }
