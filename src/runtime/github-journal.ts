@@ -54,10 +54,10 @@ async function main(): Promise<void> {
     now.getTime() - digestHours * 60 * 60 * 1000,
   );
 
-  const client = new GitHubRestActivityClient({
-    repositories,
-    token: process.env.DAILY_GITHUB_TOKEN ?? process.env.GITHUB_TOKEN,
-  });
+  const token = process.env.DAILY_GITHUB_TOKEN ?? process.env.GITHUB_TOKEN;
+  const client = new GitHubRestActivityClient(
+    token === undefined ? { repositories } : { repositories, token },
+  );
   const connector = new GitHubActivityConnector(client, () => now);
   const repository = new InMemoryActivityItemRepository();
 
