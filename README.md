@@ -1,10 +1,10 @@
 # Daily Activity Layer
 
-Provider-neutral activity inbox for Gmail, Google Calendar, Google Drive, and
-future sources. It normalizes provider events, assigns a project and activity
-type, upserts them without duplicates, and builds a daily digest model.
+Provider-neutral activity inbox and lightweight daily journal for Peerivo Daily.
+It normalizes provider events, assigns a project and activity type, upserts them
+without duplicates, builds a digest, and renders a human-readable daily journal.
 
-## Included in this PR
+## Included so far
 
 - PostgreSQL migration for `activity_items`, including the unique identity
   `(source, source_account_id, external_id)`.
@@ -16,8 +16,26 @@ type, upserts them without duplicates, and builds a daily digest model.
 - A PostgreSQL repository using `INSERT ... ON CONFLICT ... DO UPDATE`.
 - Keyword-based activity classification and project mapping.
 - Daily runner, structured digest model, and Markdown digest renderer.
+- Canonical project registry for the current Peerivo workspace.
+- Stale-project detection based on per-project cadence.
+- Markdown daily journal renderer and blank manual journal template.
 
-## Usage
+## Why this layer is urgent
+
+Daily is the command center, not just a diary. Its job is to answer every day:
+
+- what moved across the projects;
+- what is urgent;
+- who needs a reply;
+- what has invoices/documents;
+- which projects have gone stale;
+- what should be done tomorrow.
+
+OAuth and real provider clients are intentionally not required for the journal
+MVP. A useful manual/semi-automatic journal should exist before the product adds
+credential storage, schedulers, and Google API synchronization.
+
+## Usage: activity check
 
 ```ts
 import {
@@ -54,6 +72,53 @@ exported `SqlClient` interface, so `pg`, an existing database wrapper, or a
 transaction-scoped client can be used without coupling the activity domain to
 one database library.
 
+## Usage: daily journal
+
+```ts
+import {
+  createDailyJournalTemplate,
+  renderDailyJournal,
+} from "@peerivo/daily-activity";
+
+const blank = createDailyJournalTemplate(new Date("2026-09-17T00:00:00Z"));
+
+const journal = renderDailyJournal({
+  date: new Date("2026-09-17T00:00:00Z"),
+  generatedAt: new Date("2026-09-17T09:00:00Z"),
+  items: result.activities,
+  completed: ["Reviewed Daily Activity Layer scope"],
+  tomorrow: ["Close one urgent project follow-up"],
+});
+
+console.log(blank);
+console.log(journal);
+```
+
+The rendered journal contains sections for completed work, urgent items,
+replies, project movement, stale projects, meetings, documents, invoices, next
+actions, and notes.
+
+## Project registry and stale detection
+
+`DAILY_PROJECT_REGISTRY` is the canonical lightweight registry for the current
+workspace. Each project has:
+
+- stable `id`;
+- title;
+- group;
+- priority;
+- target cadence in days;
+- optional repository;
+- optional activity-level `projectId` mapping;
+- keywords for matching unstructured activity text.
+
+Use `summarizeProjectActivity()` to get activity counts and freshness per
+project. Use `findStaleProjects()` to list projects whose latest matching
+activity is older than their target cadence, or that have not been seen yet.
+
+This is not a replacement for a full project database. It is the practical first
+layer that lets Daily say: "this project moved" or "this project has gone quiet".
+
 ## Connector discovery rules
 
 The rules are exported from `src/activity/connectors/rules.ts`, so future API
@@ -67,8 +132,8 @@ follow-ups. Drive will discover recently changed documents, comments and user
 mentions, new project-folder files, and keyword-related documents.
 
 The three connector `normalize()` methods already map provider-shaped records
-to `NormalizedActivityItem`. The next PR only needs to provide read-only API
-clients and implement `fetchActivities()`.
+to `NormalizedActivityItem`. Real API clients should remain read-only and should
+be added after the journal format is proven useful.
 
 ## Security boundary
 
@@ -99,14 +164,14 @@ npm install
 npm run lint
 npm test
 npm run build
+npm run check
 ```
 
 ## Next PR
 
-1. Add encrypted OAuth credential lookup and per-provider account records.
-2. Implement paginated, incremental read-only API clients for Gmail, Calendar,
-   and Drive, including provider cursor/history handling.
-3. Add source-specific discovery heuristics and fixtures for changed events,
-   reply detection, mentions, attachments, financial documents, and follow-up.
-4. Run the daily check from the application's scheduler with per-connector
-   observability, retry isolation, and persisted sync cursors.
+1. Add a persisted daily journal file writer or storage adapter.
+2. Add GitHub activity ingestion for PRs/issues/checks before Google OAuth.
+3. Add Gmail read-only ingestion for replies, invoices, and follow-ups.
+4. Add scheduler/observability/retries only after manual journal output is useful.
+5. Add encrypted OAuth provider accounts when the product needs external users to
+   connect their own accounts.

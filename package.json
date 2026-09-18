@@ -23,7 +23,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "lint": "tsc -p tsconfig.json --noEmit",
-    "test": "npm run build && node --test dist/test/activity.test.js",
+    "test": "npm run build && node --test",
     "check": "npm run lint && npm test"
   },
   "devDependencies": {
