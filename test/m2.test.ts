@@ -16,7 +16,7 @@ describe("M2 persistence and GitHub ingestion", () => {
   });
   it("maps activity to Knowledge boundary", () => {
     const now=new Date("2026-09-18T08:00:00Z");
-    const item: StoredActivityItem={id:"a1",source:"github",sourceAccountId:"peerivo",externalId:"pr-2",threadId:null,projectId:"daily",title:"Daily M2",summary:"merged",rawText:null,url:null,actorName:null,actorEmail:null,activityType:"pull_request",status:"new",priority:"medium",occurredAt:now,detectedAt:now,dueAt:null,metadata:{},createdAt:now,updatedAt:now};
-    assert.equal(activityToKnowledgeCandidate(item).projectId, "daily");
+    const item: StoredActivityItem={id:"a1",source:"github",sourceAccountId:"peerivo",externalId:"pr-2",threadId:null,projectId:"peerivo",title:"Daily M2",summary:"merged",rawText:null,url:null,actorName:null,actorEmail:null,activityType:"pull_request",status:"new",priority:"medium",occurredAt:now,detectedAt:now,dueAt:null,metadata:{},createdAt:now,updatedAt:now};
+    assert.equal(activityToKnowledgeCandidate(item).projectId, "peerivo");
   });
 });
