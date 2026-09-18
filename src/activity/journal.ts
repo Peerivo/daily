@@ -20,6 +20,7 @@ export interface DailyJournalInput {
   completed?: readonly string[];
   notes?: readonly string[];
   tomorrow?: readonly string[];
+  knowledgeContext?: readonly string[];
 }
 
 export interface DailyJournalModel {
@@ -31,6 +32,7 @@ export interface DailyJournalModel {
   completed: readonly string[];
   notes: readonly string[];
   tomorrow: readonly string[];
+  knowledgeContext: readonly string[];
 }
 
 function formatDate(date: Date): string {
@@ -111,6 +113,7 @@ export function buildDailyJournalModel(input: DailyJournalInput): DailyJournalMo
     completed: input.completed ?? [],
     notes: input.notes ?? [],
     tomorrow: input.tomorrow ?? [],
+    knowledgeContext: input.knowledgeContext ?? [],
   };
 }
 
@@ -147,6 +150,9 @@ ${renderActivityList(model.digest.financeDocuments, "Нет финансовых
 
 ## Что сделать завтра
 ${renderTomorrowList(model.tomorrow)}
+
+## Контекст Knowledge
+${renderBulletList(model.knowledgeContext, "Knowledge пока не подключён")}
 
 ## Заметки
 ${renderBulletList(model.notes, "Нет заметок")}`;
