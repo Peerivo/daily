@@ -1,0 +1,62 @@
+name: Daily 09:00 Tbilisi
+
+on:
+  schedule:
+    - cron: "0 5 * * *"
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/daily.yml"
+      - "src/runtime/**"
+      - "src/activity/connectors/github*.ts"
+      - "src/activity/project-registry.ts"
+      - "src/knowledge/**"
+      - "package.json"
+
+permissions:
+  contents: write
+
+jobs:
+  daily:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      DAILY_GITHUB_TOKEN: ${{ secrets.PEERIVO_DAILY_GITHUB_TOKEN }}
+      KNOWLEDGE_BASE_URL: ${{ secrets.KNOWLEDGE_BASE_URL }}
+      KNOWLEDGE_TOKEN: ${{ secrets.KNOWLEDGE_TOKEN }}
+      DAILY_JOURNAL_DIR: journals
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Generate Daily journal
+        run: npm run daily:github
+
+      - name: Upload journal artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-journal-${{ github.run_id }}
+          path: journals/*.md
+          retention-days: 30
+
+      - name: Commit journal
+        shell: bash
+        run: |
+          git config user.name "peerivo-daily[bot]"
+          git config user.email "peerivo-daily[bot]@users.noreply.github.com"
+          git add journals
+          if git diff --cached --quiet; then
+            echo "No journal changes to commit"
+            exit 0
+          fi
+          git commit -m "chore(daily): journal $(date -u +%F)"
+          git push

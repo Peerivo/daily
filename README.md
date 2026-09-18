@@ -175,3 +175,34 @@ npm run check
 4. Add scheduler/observability/retries only after manual journal output is useful.
 5. Add encrypted OAuth provider accounts when the product needs external users to
    connect their own accounts.
+
+
+## Scheduled Daily runtime
+
+Daily is scheduled by GitHub Actions at **09:00 Asia/Tbilisi (05:00 UTC)** and can
+also be started manually with `workflow_dispatch`. Each run:
+
+1. reads GitHub activity for repositories in `DAILY_PROJECT_REGISTRY`;
+2. keeps inaccessible repositories as explicit actionable alerts instead of
+   aborting the whole report;
+3. optionally exchanges candidates/context with Knowledge when
+   `KNOWLEDGE_BASE_URL` is configured;
+4. writes `journals/YYYY-MM-DD.md`;
+5. uploads the journal as a workflow artifact;
+6. commits the journal back to `main` when it changed.
+
+For full private-repository coverage, configure the Actions secret
+`PEERIVO_DAILY_GITHUB_TOKEN` with read access to the relevant Peerivo
+repositories. Without it, the workflow falls back to the repository-scoped
+`GITHUB_TOKEN`: public repositories still work and private repositories appear
+as ingestion alerts in the journal.
+
+Optional Knowledge secrets:
+
+- `KNOWLEDGE_BASE_URL` — base URL of Peerivo Knowledge;
+- `KNOWLEDGE_TOKEN` — bearer token when the Knowledge endpoint requires one.
+
+The Knowledge integration contract is:
+
+- `POST /v1/daily/candidates`;
+- `GET /v1/projects/:projectId/context?consumer=daily`.
