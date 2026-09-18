@@ -24,7 +24,8 @@
     "build": "tsc -p tsconfig.json",
     "lint": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node --test",
-    "check": "npm run lint && npm test"
+    "check": "npm run lint && npm test",
+    "daily:github": "npm run build && node dist/src/runtime/github-journal.js"
   },
   "devDependencies": {
     "@types/node": "^20.17.0",
