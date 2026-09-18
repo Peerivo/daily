@@ -21,6 +21,7 @@ export interface GitHubActivityRecord {
   state?: string | null;
   conclusion?: string | null;
   number?: number | null;
+  ingestionError?: boolean;
 }
 
 export interface GitHubActivityClient {
@@ -94,6 +95,7 @@ export class GitHubActivityConnector implements ActivityConnector {
           state: record.state ?? null,
           conclusion: record.conclusion ?? null,
           number: record.number ?? null,
+          ingestionError: record.ingestionError ?? false,
         },
       };
     });
