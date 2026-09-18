@@ -116,6 +116,7 @@ describe("GitHubRestActivityClient", () => {
     assert.equal(records.length, 1);
     assert.equal(records[0]?.kind, "check_run");
     assert.equal(records[0]?.conclusion, "failure");
+    assert.equal(records[0]?.ingestionError, true);
     assert.match(records[0]?.state ?? "", /GitHub API request failed \(404\)/);
   });
 
