@@ -101,6 +101,24 @@ describe("GitHubRestActivityClient", () => {
     assert.equal(seenUrls.length, 3);
   });
 
+  it("turns an inaccessible repository into an actionable failure record", async () => {
+    const client = new GitHubRestActivityClient({
+      repositories: ["Peerivo/private-project"],
+      fetchImpl: async () => response("not found", 404),
+    });
+
+    const records = await client.fetchActivityRecords({
+      since: new Date("2026-09-18T09:00:00Z"),
+      until: new Date("2026-09-18T13:00:00Z"),
+      accountId: "peerivo",
+    });
+
+    assert.equal(records.length, 1);
+    assert.equal(records[0]?.kind, "check_run");
+    assert.equal(records[0]?.conclusion, "failure");
+    assert.match(records[0]?.state ?? "", /GitHub API request failed \(404\)/);
+  });
+
   it("rejects malformed repository identifiers before requesting GitHub", async () => {
     const client = new GitHubRestActivityClient({
       repositories: ["not-a-repository"],
