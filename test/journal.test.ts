@@ -94,6 +94,72 @@ describe("daily journal", () => {
     assert.equal(summaries[0]?.isStale, false);
   });
 
+  it("does not smear one precise GitHub repository across broad Peerivo projects", () => {
+    const projects = DAILY_PROJECT_REGISTRY.filter((project) =>
+      ["peerivo-network", "peerivo-publisher", "peerivo-marketing"].includes(
+        project.id,
+      ),
+    );
+    const summaries = summarizeProjectActivity(
+      [
+        storedActivity({
+          projectId: "peerivo",
+          title: "[Peerivo/network] PR #42: Network change",
+          metadata: { repository: "Peerivo/network" },
+        }),
+      ],
+      projects,
+      journalDate,
+    );
+
+    assert.equal(
+      summaries.find((summary) => summary.project.id === "peerivo-network")
+        ?.activityCount,
+      1,
+    );
+    assert.equal(
+      summaries.find((summary) => summary.project.id === "peerivo-publisher")
+        ?.activityCount,
+      0,
+    );
+    assert.equal(
+      summaries.find((summary) => summary.project.id === "peerivo-marketing")
+        ?.activityCount,
+      0,
+    );
+  });
+
+  it("surfaces ingestion failures without counting them as project movement", () => {
+    const ingestionFailure = storedActivity({
+      title: "[Peerivo/publisher] GitHub ingestion failed",
+      activityType: "system_alert",
+      status: "needs_action",
+      priority: "high",
+      metadata: {
+        repository: "Peerivo/publisher",
+        ingestionError: true,
+      },
+    });
+
+    const [summary] = summarizeProjectActivity(
+      [ingestionFailure],
+      DAILY_PROJECT_REGISTRY.filter(
+        (project) => project.id === "peerivo-publisher",
+      ),
+      journalDate,
+    );
+    assert.equal(summary?.activityCount, 0);
+    assert.equal(summary?.status, "never_seen");
+
+    const markdown = renderDailyJournal({
+      date: journalDate,
+      generatedAt,
+      items: [ingestionFailure],
+    });
+    assert.match(markdown, /## Требует внимания/);
+    assert.match(markdown, /GitHub ingestion failed/);
+  });
+
   it("renders a daily journal from activity items", () => {
     const markdown = renderDailyJournal({
       date: journalDate,
